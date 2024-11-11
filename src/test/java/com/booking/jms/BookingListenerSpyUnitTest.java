@@ -2,13 +2,13 @@ package com.booking.jms;
 
 import com.booking.facade.BookingFacade;
 import com.booking.model.Ticket;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 public class BookingListenerSpyUnitTest {
@@ -24,8 +24,8 @@ public class BookingListenerSpyUnitTest {
     }
 
     @Test
-    public void testBookTicket() {
-
+    public void shouldBookTicketWhenBookingIsSuccessful() {
+        // Arrange
         var ticket = new Ticket();
         ticket.setUserId(1);
         ticket.setEventId(1);
@@ -39,8 +39,10 @@ public class BookingListenerSpyUnitTest {
                 ticket.getCategory()
         );
 
+        // Act
         bookingListener.bookTicket(ticket);
 
+        // Assert
         verify(bookingFacade, times(1)).bookTicket(
                 ticket.getUserId(),
                 ticket.getEventId(),
@@ -50,8 +52,8 @@ public class BookingListenerSpyUnitTest {
     }
 
     @Test
-    public void testBookTicketIfFails() {
-
+    public void shouldThrowExceptionWhenBookingFails() {
+        // Arrange
         var ticket = new Ticket();
         ticket.setUserId(1);
         ticket.setEventId(1);
@@ -65,6 +67,7 @@ public class BookingListenerSpyUnitTest {
                 ticket.getCategory()
         );
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> bookingListener.bookTicket(ticket));
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> bookingListener.bookTicket(ticket));
     }
 }

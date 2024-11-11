@@ -34,26 +34,53 @@ class BookingAppTest {
     }
 
     @Test
-    void testMain() {
+    void testMainRunsApplication() {
+        // Arrange
         try (var mockedSpringApplication = mockStatic(SpringApplication.class)) {
             mockedSpringApplication.when(() -> SpringApplication.run(BookingApp.class, new String[]{})).thenReturn(null);
+
+            // Act
             BookingApp.main(new String[]{});
+
+            // Assert
             mockedSpringApplication.verify(() -> SpringApplication.run(BookingApp.class, new String[]{}));
         }
     }
 
     @Test
-    void testCreateEvent() {
-        Event eventById = bookingFacade.createEvent(new Event("demo", new Date(), 50d));
-        assertEquals("demo", eventById.getTitle());
+    void testCreateEventReturnsCorrectTitle() {
+        // Arrange
+        Event event = new Event("demo", new Date(), 50d);
+
+        // Act
+        Event createdEvent = bookingFacade.createEvent(event);
+
+        // Assert
+        assertEquals("demo", createdEvent.getTitle());
     }
 
     @Test
-    void testCreateUser() {
-        User saved = bookingFacade.createUser(new User("test", "test@test.com"));
-        User user = bookingFacade.getUserById(saved.getId());
+    void testCreateUserReturnsCorrectName() {
+        // Arrange
+        User user = new User("test", "test@test.com");
 
-        assertEquals("test", user.getName());
+        // Act
+        User createdUser = bookingFacade.createUser(user);
+
+        // Assert
+        assertEquals("test", createdUser.getName());
     }
 
+    @Test
+    void testCreateUserAndRetrieveByIdReturnsCorrectEmail() {
+        // Arrange
+        User user = new User("test", "test@test.com");
+        User savedUser = bookingFacade.createUser(user);
+
+        // Act
+        User retrievedUser = bookingFacade.getUserById(savedUser.getId());
+
+        // Assert
+        assertEquals("test@test.com", retrievedUser.getEmail());
+    }
 }

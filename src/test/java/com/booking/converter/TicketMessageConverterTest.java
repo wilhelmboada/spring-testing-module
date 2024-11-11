@@ -24,6 +24,7 @@ public class TicketMessageConverterTest {
 
     @Test
     public void testToMessage() throws JMSException {
+        // Arrange
         var ticket = new Ticket();
         ticket.setUserId(1);
         ticket.setEventId(1);
@@ -36,13 +37,16 @@ public class TicketMessageConverterTest {
         when(session.createTextMessage(expectedJson))
                 .thenReturn(textMessage);
 
+        // Act
         var message = ticketMessageConverter.toMessage(ticket, session);
 
+        // Assert
         Assertions.assertEquals(textMessage, message);
     }
 
     @Test
-    public void testFromMessage() throws JMSException {
+    public void testFromMessage_UserId() throws JMSException {
+        // Arrange
         var expectedTicket = new Ticket();
         expectedTicket.setUserId(1);
         expectedTicket.setEventId(1);
@@ -55,16 +59,80 @@ public class TicketMessageConverterTest {
         when(textMessage.getText())
                 .thenReturn(ticketJson);
 
+        // Act
         var message = ticketMessageConverter.fromMessage(textMessage);
-
-        Assertions.assertInstanceOf(Ticket.class, message);
-
         var ticket = (Ticket) message;
 
+        // Assert
         Assertions.assertEquals(expectedTicket.getUserId(), ticket.getUserId());
+    }
+
+    @Test
+    public void testFromMessage_EventId() throws JMSException {
+        // Arrange
+        var expectedTicket = new Ticket();
+        expectedTicket.setUserId(1);
+        expectedTicket.setEventId(1);
+        expectedTicket.setPlace(10);
+        expectedTicket.setCategory(1);
+
+        var ticketJson = """
+                {"id":0,"eventId":1,"userId":1,"category":1,"place":10}""";
+
+        when(textMessage.getText())
+                .thenReturn(ticketJson);
+
+        // Act
+        var message = ticketMessageConverter.fromMessage(textMessage);
+        var ticket = (Ticket) message;
+
+        // Assert
         Assertions.assertEquals(expectedTicket.getEventId(), ticket.getEventId());
-        Assertions.assertEquals(expectedTicket.getCategory(), ticket.getCategory());
+    }
+
+    @Test
+    public void testFromMessage_Place() throws JMSException {
+        // Arrange
+        var expectedTicket = new Ticket();
+        expectedTicket.setUserId(1);
+        expectedTicket.setEventId(1);
+        expectedTicket.setPlace(10);
+        expectedTicket.setCategory(1);
+
+        var ticketJson = """
+                {"id":0,"eventId":1,"userId":1,"category":1,"place":10}""";
+
+        when(textMessage.getText())
+                .thenReturn(ticketJson);
+
+        // Act
+        var message = ticketMessageConverter.fromMessage(textMessage);
+        var ticket = (Ticket) message;
+
+        // Assert
         Assertions.assertEquals(expectedTicket.getPlace(), ticket.getPlace());
     }
 
+    @Test
+    public void testFromMessage_Category() throws JMSException {
+        // Arrange
+        var expectedTicket = new Ticket();
+        expectedTicket.setUserId(1);
+        expectedTicket.setEventId(1);
+        expectedTicket.setPlace(10);
+        expectedTicket.setCategory(1);
+
+        var ticketJson = """
+                {"id":0,"eventId":1,"userId":1,"category":1,"place":10}""";
+
+        when(textMessage.getText())
+                .thenReturn(ticketJson);
+
+        // Act
+        var message = ticketMessageConverter.fromMessage(textMessage);
+        var ticket = (Ticket) message;
+
+        // Assert
+        Assertions.assertEquals(expectedTicket.getCategory(), ticket.getCategory());
+    }
 }

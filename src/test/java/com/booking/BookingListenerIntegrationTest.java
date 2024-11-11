@@ -7,7 +7,7 @@ import com.booking.dao.UserDao;
 import com.booking.model.Event;
 import com.booking.model.Ticket;
 import com.booking.model.User;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +17,9 @@ import org.springframework.jms.core.JmsTemplate;
 
 import java.util.Date;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(properties = "spring.config.name=application-test")
 @EnableJms
@@ -40,47 +43,98 @@ public class BookingListenerIntegrationTest {
     @Value("${jms.message}")
     private String bookingMessage;
 
-    @Test
-    public void testBookTicket() throws InterruptedException {
+    private User userSaved;
+    private Event eventSaved;
+    private Ticket ticket;
 
+    @BeforeEach
+    public void setup() {
+        // Arrange
         ticketDao.deleteAll();
-        var user = new User();
+        eventDao.deleteAll();
+        userDao.deleteAll();
+
+        User user = new User();
         user.setName("Test");
         user.setEmail("test@test.com");
 
-        var event = new Event();
+        Event event = new Event();
         event.setTitle("Test");
         event.setDate(new Date());
         event.setTicketPrice(20.0);
 
-        User userSaved = userDao.save(user);
-        Event eventSaved = eventDao.save(event);
+        userSaved = userDao.save(user);
+        eventSaved = eventDao.save(event);
 
-        var ticket = new Ticket();
-        ticket.setUserId(user.getId());
-        ticket.setEventId(event.getId());
+        ticket = new Ticket();
+        ticket.setUserId(userSaved.getId());
+        ticket.setEventId(eventSaved.getId());
         ticket.setPlace(10);
         ticket.setCategory(1);
 
         jmsTemplate.convertAndSend(bookingMessage, ticket);
+    }
 
+    private List<Ticket> getFilteredTickets() throws InterruptedException {
+        // Espera para simular la recepción del mensaje en la cola
         Thread.sleep(500);
-
         List<Ticket> all = ticketDao.findAll();
-
-
-        var filteredTickets = all.stream()
+        return all.stream()
                 .filter(t -> t.getUserId() == userSaved.getId() && t.getEventId() == eventSaved.getId())
                 .toList();
+    }
 
-        Assertions.assertEquals(1, filteredTickets.size());
-        Assertions.assertTrue(filteredTickets.stream().findFirst().isPresent());
+    @Test
+    public void testTicketBookingCreatesOneTicket() throws InterruptedException {
+        // Act
+        List<Ticket> filteredTickets = getFilteredTickets();
 
-        var bookedTicket = filteredTickets.stream().findFirst().get();
+        // Assert
+        assertEquals(1, filteredTickets.size());
+    }
 
-        Assertions.assertEquals(ticket.getUserId(), bookedTicket.getUserId());
-        Assertions.assertEquals(ticket.getEventId(), bookedTicket.getEventId());
-        Assertions.assertEquals(ticket.getCategory(), bookedTicket.getCategory());
-        Assertions.assertEquals(ticket.getPlace(), bookedTicket.getPlace());
+    @Test
+    public void testTicketIsPresentAfterBooking() throws InterruptedException {
+        // Act
+        List<Ticket> filteredTickets = getFilteredTickets();
+
+        // Assert
+        assertTrue(filteredTickets.stream().findFirst().isPresent());
+    }
+
+    @Test
+    public void testTicketUserIdMatches() throws InterruptedException {
+        // Act
+        Ticket bookedTicket = getFilteredTickets().stream().findFirst().orElseThrow();
+
+        // Assert
+        assertEquals(ticket.getUserId(), bookedTicket.getUserId());
+    }
+
+    @Test
+    public void testTicketEventIdMatches() throws InterruptedException {
+        // Act
+        Ticket bookedTicket = getFilteredTickets().stream().findFirst().orElseThrow();
+
+        // Assert
+        assertEquals(ticket.getEventId(), bookedTicket.getEventId());
+    }
+
+    @Test
+    public void testTicketCategoryMatches() throws InterruptedException {
+        // Act
+        Ticket bookedTicket = getFilteredTickets().stream().findFirst().orElseThrow();
+
+        // Assert
+        assertEquals(ticket.getCategory(), bookedTicket.getCategory());
+    }
+
+    @Test
+    public void testTicketPlaceMatches() throws InterruptedException {
+        // Act
+        Ticket bookedTicket = getFilteredTickets().stream().findFirst().orElseThrow();
+
+        // Assert
+        assertEquals(ticket.getPlace(), bookedTicket.getPlace());
     }
 }
